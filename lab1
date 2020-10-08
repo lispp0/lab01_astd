@@ -1,0 +1,116 @@
+#include "stdafx.h"
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string>
+using namespace std;
+
+typedef int Data;
+struct Stack_din {
+    Data * a;            // указатель на динамически выделенную память под элементы стека
+    unsigned int size;   // емкость стека
+    unsigned int n;      // сколько элементов хранится в стеке
+};
+
+#define N 10
+void stack_init(struct Stack_din * s) { //создаем пустой стек на 10 элементов
+    s->n = 0;       // пустой стек
+    s->size = N;    // емкостью N элементов
+    s->a = static_cast <int *> (malloc(s->size * sizeof(Data))); //выделяем блок памяти на 10 элементов и возвращаем указатель на начало блока
+}
+
+void stack_push(struct Stack_din * s, Data data) {   
+    if (s->n == s->size) { // если стек полон
+        s->size *= 2; //его нужно увеличить в 2 раза
+        s->a = static_cast <int *> (realloc(s->a, s->size * sizeof(Data))); // изменяем размер блока памяти
+    }
+    s->a[s->n] = data;  
+	s->n ++; 
+}
+
+Data stack_pop(Stack_din * st){
+	Data res = st->a[st->n - 1];
+	st->n --;
+	return res;
+}
+
+
+struct Stack {
+	char c; // Символ операции
+	Stack *next; 
+} ;
+
+// ============== Добавление элемента в стек =============
+Stack* push_s ( Stack *t, char s) {
+	Stack *t1 = (Stack*) malloc(sizeof(Stack));
+	t1 -> c = s;
+	t1-> next = t;
+	return t1;
+}
+
+// ============== Извлечение элемента из стека ===============
+Stack* pop_s ( Stack *t, char *s ) {
+	Stack *t1 = t;
+	*s = t -> c;
+	t = t->next;
+	free(t1);
+	return t;
+}
+
+//======= Функция реализации приоритета операций =========
+int Prior ( char a ) {
+	switch ( a ) {
+	case '^': return 4;
+	case '*': case '/': return 3;
+	case '-': case '+': return 2;
+	case '(': return 1;
+	}
+	return 0;
+}
+
+void main(){
+	setlocale (0, "");
+	Stack *t, *Op = NULL; // Стек операций Op – пуст
+	char a, In[80], Out[80]; // Входная In и выходная Out строки
+	int k = 0, l = 0; // Текущие индексы для строк
+	cout << " Пожалуйста, введите математическое выражение: "; 
+	gets(In);
+	while ( In[k] != '\0') { // Анализируем символы строки In
+		// Если символ «)», выталкиваем из стека в выходную строку все операции
+		if ( In[k] == ')' ) {
+			while ( (Op -> c) != '(' ) { // до открывающей скобки
+				Op = pop_s(Op,&a); // Считываем элемент из стека
+				if ( !Op ) a = '\0';
+				Out[l++] = a; // и записываем в строку Out.
+			}
+			t = Op; // Удаляем из стека открывающую скобку
+			Op = Op -> next;
+			free(t);
+		}
+		// Если символ строки In – буква, заносим его в строку Out
+		if ( In[k] >= 'a' && In[k] <= 'z' ) Out[l++] = In[k];
+		// Если символ – открывающая скобка, записываем его в стек
+		if ( In[k] == '(' ) Op = push_s(Op,In[k]);
+		/* Если символ – знак операции, переписываем из стека в строку Out все операции с большим или равным приоритетом */
+		if ( In[k] == '+' || In[k] == '-' || In[k] == '*' || In[k] == '/' || In[k] == '^' ) {
+			while ( Op != NULL && Prior (Op -> c) >= Prior (In[k]) ) {
+				Op = pop_s(Op,&a); // Извлекаем из стека символ Out[l++] = a; 
+				Out[l++] = a;// и записываем в строку Out
+			}
+			Op = push_s(Op,In[k]); // Текущий символ – в стек
+		}
+		// Если число, то мы записываем его в строку Out
+		if ( In[k] >= '0' && In[k] <= '9' ) {
+			Out[l++] = In[k];
+		}
+		k++;
+	} // Конец цикла анализа входной строки
+	// Если стек не пуст, переписываем все операции в выходную строку
+	while ( Op !=NULL) {
+		Op = pop_s(Op,&a);
+		Out[l++] = a;
+	}
+	Out[l] = '\0';
+	cout << '\n' << "Постфиксная запись = "<< Out; // Выводим на экран результат
+	system ("pause");
+}
